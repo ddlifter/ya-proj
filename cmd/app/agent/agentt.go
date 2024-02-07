@@ -1,4 +1,4 @@
-package Calc
+package agent
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func EvaluateExpression(expr string) (int, error) {
+func EvaluateExpression(expr string) (float64, error) {
 	tokens := tokenize(expr)
 	// Преобразование в обратную польскую нотацию
 	rpn := shuntingYard(tokens)
@@ -70,15 +70,15 @@ func shuntingYard(tokens []string) []string {
 	return rpn
 }
 
-func evaluateRPN(tokens []string) (int, error) {
-	var stack []int
+func evaluateRPN(tokens []string) (float64, error) {
+	var stack []float64
 	for _, token := range tokens {
 		if !strings.Contains("+-*/", token) {
 			value, err := strconv.Atoi(token)
 			if err != nil {
 				return 0, err
 			}
-			stack = append(stack, value)
+			stack = append(stack, float64(value))
 		} else {
 			if len(stack) < 2 {
 				return 0, fmt.Errorf("Invalid expression")
