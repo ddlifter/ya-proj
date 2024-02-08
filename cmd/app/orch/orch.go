@@ -2,18 +2,13 @@ package orch
 
 import (
 	a "1/cmd/app/agent"
+	"context"
 	"encoding/json"
 	"net/http"
 	"time"
 )
 
 // Expression структура для представления арифметического выражения
-type Expression struct {
-	ID       string  `json:"id"`
-	MathExpr string  `json:"mathExpr"`
-	Status   string  `json:"status"`
-	Result   float64 `json:"result,omitempty"`
-}
 
 // Operation структура для представления доступной операции
 type Operation struct {
@@ -21,19 +16,29 @@ type Operation struct {
 	Execution time.Duration `json:"executionTime"`
 }
 
-var Expressions = make(map[string]Expression)
+var Expressions = make(map[string]a.Expression)
 var operations []Operation
 
 func StartHandler(w http.ResponseWriter, r *http.Request) {
-	for _, expr := range Expressions {
+	tasks := make(chan a.Expression, 100) // Буферизированный канал для задач
+	ctx, Cancel := context.WithCancel(context.Background())
+	for i := 0; i < a.AgentCount; i++ {
 		a.Wg.Add(1)
-		go a.Worker(expr.ID)
+		go a.Worker(ctx, &a.Wg, tasks) // Запускаем горутины
 	}
+
+	for _, expr := range Expressions {
+		tasks <- expr // Отправляем задачи в канал
+	}
+	close(tasks) // Закрываем канал после отправки всех задач
+
+	a.Wg.Wait() // Ждем завершения всех горутин
+	Cancel()    // Отменяем контекст
 }
 
 // AddExpressionHandler обработчик для добавления вычисления арифметического выражения
 func AddExpressionHandler(w http.ResponseWriter, r *http.Request) {
-	var newExpr Expression
+	var newExpr a.Expression
 	err := json.NewDecoder(r.Body).Decode(&newExpr)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -60,7 +65,7 @@ func GetExpressionByIDHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 
 	// Поиск выражения по ID
-	var foundExpr Expression
+	var foundExpr a.Expression
 	for _, expr := range Expressions {
 		if expr.ID == id {
 			foundExpr = expr
@@ -98,7 +103,7 @@ func GetTaskHandler(w http.ResponseWriter, r *http.Request) {
 
 // SubmitResultHandler обработчик для приёма результата обработки данных
 func SubmitResultHandler(w http.ResponseWriter, r *http.Request) {
-	var result Expression
+	var result a.Expression
 	err := json.NewDecoder(r.Body).Decode(&result)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

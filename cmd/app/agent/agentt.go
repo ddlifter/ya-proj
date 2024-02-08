@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -11,12 +12,27 @@ import (
 	"sync"
 )
 
+var Tasks = make(chan Expression, 100) // Буферизированный канал для задач
+var Ctx, Cancel = context.WithCancel(context.Background())
+
 type Expression struct {
 	ID       string  `json:"id"`
 	MathExpr string  `json:"mathExpr"`
 	Status   string  `json:"status"`
-	Result   float64 `json:"result,omitempty"`
+	Result   float64 `json:"result"`
 }
+
+type Agent struct {
+	ID    int
+	State string
+}
+
+var (
+	AgentID    int = 1
+	AgentCount int = 3
+	Wg         sync.WaitGroup
+	Agents     = make([]Agent, AgentCount)
+)
 
 func EvaluateExpression(expr string) (float64, error) {
 	tokens := tokenize(expr)
@@ -115,14 +131,21 @@ func evaluateRPN(tokens []string) (float64, error) {
 	return 0, fmt.Errorf("Invalid expression")
 }
 
-var Wg sync.WaitGroup
-
-func Worker(id string) {
-	defer Wg.Done()
-	expr := getExpressionFromServer(id)
-
-	result, _ := EvaluateExpression(expr)
-	sendResultToServer(result, id, expr)
+func Worker(ctx context.Context, wg *sync.WaitGroup, tasks <-chan Expression) {
+	defer wg.Done()
+	for {
+		select {
+		case <-ctx.Done():
+			return // Завершаем горутину при получении сигнала отмены
+		case a, ok := <-tasks:
+			if !ok {
+				return // Завершаем горутину при закрытии канала
+			}
+			expr := getExpressionFromServer(a.ID)
+			result, _ := EvaluateExpression(expr)
+			sendResultToServer(result, a.ID, expr)
+		}
+	}
 }
 
 func getExpressionFromServer(id string) string {
@@ -161,9 +184,4 @@ func sendResultToServer(result float64, workerID string, expr string) {
 		return
 	}
 	defer resp.Body.Close()
-}
-
-func CalculateHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Calculating..."))
 }
