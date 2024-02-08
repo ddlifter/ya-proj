@@ -1,10 +1,22 @@
 package agent
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 )
+
+type Expression struct {
+	ID       string  `json:"id"`
+	MathExpr string  `json:"mathExpr"`
+	Status   string  `json:"status"`
+	Result   float64 `json:"result,omitempty"`
+}
 
 func EvaluateExpression(expr string) (float64, error) {
 	tokens := tokenize(expr)
@@ -101,4 +113,57 @@ func evaluateRPN(tokens []string) (float64, error) {
 		return stack[0], nil
 	}
 	return 0, fmt.Errorf("Invalid expression")
+}
+
+var Wg sync.WaitGroup
+
+func Worker(id string) {
+	defer Wg.Done()
+	expr := getExpressionFromServer(id)
+
+	result, _ := EvaluateExpression(expr)
+	sendResultToServer(result, id, expr)
+}
+
+func getExpressionFromServer(id string) string {
+	resp, err := http.Get("http://localhost:8080/get-expression-by-id?id=" + id)
+	if err != nil {
+		log.Println("Error getting expression from server:", err)
+		return ""
+	}
+	defer resp.Body.Close()
+
+	var calc Expression
+	if err := json.NewDecoder(resp.Body).Decode(&calc); err != nil {
+		log.Println("Error decoding response:", err)
+		return ""
+	}
+
+	return calc.MathExpr
+}
+
+func sendResultToServer(result float64, workerID string, expr string) {
+	calc := Expression{
+		ID:       workerID,
+		Result:   result,
+		Status:   "completed",
+		MathExpr: expr,
+	}
+	jsonData, err := json.Marshal(calc)
+	if err != nil {
+		log.Println("Error marshalling JSON:", err)
+		return
+	}
+
+	resp, err := http.Post("http://localhost:8080/add-expression", "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		log.Println("Error sending result to server:", err)
+		return
+	}
+	defer resp.Body.Close()
+}
+
+func CalculateHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Calculating..."))
 }

@@ -1,6 +1,7 @@
 package orch
 
 import (
+	a "1/cmd/app/agent"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -20,8 +21,15 @@ type Operation struct {
 	Execution time.Duration `json:"executionTime"`
 }
 
-var Expressions []Expression
+var Expressions = make(map[string]Expression)
 var operations []Operation
+
+func StartHandler(w http.ResponseWriter, r *http.Request) {
+	for _, expr := range Expressions {
+		a.Wg.Add(1)
+		go a.Worker(expr.ID)
+	}
+}
 
 // AddExpressionHandler обработчик для добавления вычисления арифметического выражения
 func AddExpressionHandler(w http.ResponseWriter, r *http.Request) {
@@ -33,8 +41,7 @@ func AddExpressionHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Добавление выражения в список
-	newExpr.Status = "pending"
-	Expressions = append(Expressions, newExpr)
+	Expressions[newExpr.ID] = newExpr
 
 	// Отправка ответа
 	w.WriteHeader(http.StatusCreated)
@@ -81,12 +88,12 @@ func GetTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task := Expressions[0]
-	Expressions = Expressions[1:]
+	//task := Expressions[0]
+	//Expressions = Expressions[1:]
 
 	// Отправка задачи в формате JSON
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(task)
+	//json.NewEncoder(w).Encode(task)
 }
 
 // SubmitResultHandler обработчик для приёма результата обработки данных
@@ -99,10 +106,10 @@ func SubmitResultHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Обновление статуса и результата в соответствующей задаче
-	for i, task := range Expressions {
+	for _, task := range Expressions {
 		if task.ID == result.ID {
-			Expressions[i].Status = result.Status
-			Expressions[i].Result = result.Result
+			//Expressions[i].Status = result.Status
+			//Expressions[i].Result = result.Result
 			break
 		}
 	}
