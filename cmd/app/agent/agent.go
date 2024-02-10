@@ -1,43 +1,17 @@
 package agent
 
 import (
-	"bytes"
-	"context"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
 	"strconv"
 	"strings"
-	"sync"
-)
-
-var Tasks = make(chan Expression, 100) // Буферизированный канал для задач
-var Ctx, Cancel = context.WithCancel(context.Background())
-
-type Expression struct {
-	ID       string  `json:"id"`
-	MathExpr string  `json:"mathExpr"`
-	Status   string  `json:"status"`
-	Result   float64 `json:"result"`
-}
-
-type Agent struct {
-	ID    int
-	State string
-}
-
-var (
-	AgentID    int = 1
-	AgentCount int = 3
-	Wg         sync.WaitGroup
-	Agents     = make([]Agent, AgentCount)
 )
 
 func EvaluateExpression(expr string) (float64, error) {
 	tokens := tokenize(expr)
+	fmt.Println(tokens)
 	// Преобразование в обратную польскую нотацию
 	rpn := shuntingYard(tokens)
+	fmt.Println(rpn)
 	// Вычисление результата
 	result, err := evaluateRPN(rpn)
 	return result, err
@@ -129,59 +103,4 @@ func evaluateRPN(tokens []string) (float64, error) {
 		return stack[0], nil
 	}
 	return 0, fmt.Errorf("Invalid expression")
-}
-
-func Worker(ctx context.Context, wg *sync.WaitGroup, tasks <-chan Expression) {
-	defer wg.Done()
-	for {
-		select {
-		case <-ctx.Done():
-			return // Завершаем горутину при получении сигнала отмены
-		case a, ok := <-tasks:
-			if !ok {
-				return // Завершаем горутину при закрытии канала
-			}
-			expr := getExpressionFromServer(a.ID)
-			result, _ := EvaluateExpression(expr)
-			sendResultToServer(result, a.ID, expr)
-		}
-	}
-}
-
-func getExpressionFromServer(id string) string {
-	resp, err := http.Get("http://localhost:8080/get-expression-by-id?id=" + id)
-	if err != nil {
-		log.Println("Error getting expression from server:", err)
-		return ""
-	}
-	defer resp.Body.Close()
-
-	var calc Expression
-	if err := json.NewDecoder(resp.Body).Decode(&calc); err != nil {
-		log.Println("Error decoding response:", err)
-		return ""
-	}
-
-	return calc.MathExpr
-}
-
-func sendResultToServer(result float64, workerID string, expr string) {
-	calc := Expression{
-		ID:       workerID,
-		Result:   result,
-		Status:   "completed",
-		MathExpr: expr,
-	}
-	jsonData, err := json.Marshal(calc)
-	if err != nil {
-		log.Println("Error marshalling JSON:", err)
-		return
-	}
-
-	resp, err := http.Post("http://localhost:8080/add-expression", "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		log.Println("Error sending result to server:", err)
-		return
-	}
-	defer resp.Body.Close()
 }

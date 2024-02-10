@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Input and Display Data</title>
+</head>
+<body>
+    <h2>Input Data</h2>
+    <form id="dataForm">
+        <label for="inputData">Enter Data:</label>
+        <input type="text" id="inputData" name="inputData">
+        <button type="submit">Add</button>
+    </form>
+
+    <h2>Display Data</h2>
+    <ul id="displayList">
+        <!-- Введенные данные будут отображаться здесь -->
+    </ul>
+
+    <script>
+        document.getElementById('dataForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Предотвращаем отправку формы, чтобы не перезагружать страницу
+
+            let inputData = document.getElementById('inputData').value; // Получаем введенные данные
+            let displayList = document.getElementById('displayList');
+            let listItem = document.createElement('li');
+            listItem.textContent = inputData;
+            displayList.appendChild(listItem); // Добавляем введенные данные в список
+
+            // Создаем кнопку для удаления данных
+            let deleteButton = document.createElement('button');
+            deleteButton.textContent = 'Delete';
+            deleteButton.addEventListener('click', function() {
+                displayList.removeChild(listItem); // Удаляем соответствующий элемент списка при нажатии на кнопку
+            });
+            listItem.appendChild(deleteButton); // Добавляем кнопку в элемент списка
+        });
+    </script>
+</body>
+</html>
