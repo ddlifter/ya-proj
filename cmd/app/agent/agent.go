@@ -15,9 +15,11 @@ import (
 	server "1/cmd/app/server"
 )
 
+var mapa = make(map[string]float64)
+
 type worker struct {
 	pool     *Pool
-	jobsChan chan string
+	jobsChan chan server.Expression
 	quit     chan *sync.WaitGroup
 }
 
@@ -33,13 +35,13 @@ type Pool struct {
 	QueueSize int
 
 	finish      bool
-	jobsQueue   chan string
+	jobsQueue   chan server.Expression
 	freeWorkers chan *worker
 	workers     *list.List
 }
 
 func (w *worker) start() {
-	w.jobsChan = make(chan string, 1)
+	w.jobsChan = make(chan server.Expression, 1)
 	w.quit = make(chan *sync.WaitGroup, 1)
 
 	go func() {
@@ -58,18 +60,18 @@ func (w *worker) start() {
 	}()
 }
 
-func (w *worker) doJob(job string) {
+func (w *worker) doJob(job server.Expression) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("panic in job %s: %s", job, r)
 		}
 	}()
 
-	fmt.Println(EvaluateExpression(job))
+	mapa[job.MathExpr] = EvaluateExpression(job.MathExpr)
 }
 
 func (p *Pool) Init() {
-	p.jobsQueue = make(chan string, p.QueueSize)
+	p.jobsQueue = make(chan server.Expression, p.QueueSize)
 	p.freeWorkers = make(chan *worker, p.Size)
 	p.workers = list.New()
 }
@@ -94,7 +96,7 @@ func (p *Pool) Start() {
 	}()
 }
 
-func (p *Pool) AddJob(data string) error {
+func (p *Pool) AddJob(data server.Expression) error {
 	if p.finish {
 		return ErrPoolClosed
 	}
@@ -225,7 +227,7 @@ func evaluateRPN(tokens []string) (float64, error) {
 	return 0, fmt.Errorf("Invalid expression")
 }
 
-func Process(Expressions []string) string {
+func Process(Expressions []server.Expression) {
 	pool := &Pool{
 		Size:      len(Expressions),
 		QueueSize: len(Expressions),
@@ -233,21 +235,21 @@ func Process(Expressions []string) string {
 
 	pool.Init()
 
-	pool.Start()
+	//pool.Start()
 
 	// Add some jobs to the pool
-	for i := 0; i < 8; i++ {
+	for i := 0; i < len(Expressions); i++ {
 		if err := pool.AddJob(Expressions[i]); err != nil {
 			log.Printf("Error adding job: %v", err)
 		}
 	}
 
-	log.Printf("Queue length: %d", pool.GetQueueLength())
-	log.Printf("Active workers: %d", pool.GetActiveWorkers())
+	pool.Start()
+	// log.Printf("Queue length: %d", pool.GetQueueLength())
+	// log.Printf("Active workers: %d", pool.GetActiveWorkers())
 
 	// Finish all jobs and workers
 	pool.Finish()
-	return ""
 }
 
 func CalculateHandler(w http.ResponseWriter, r *http.Request) {
@@ -259,17 +261,28 @@ func CalculateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	users := []server.Expression{} // array of users
+	var res []server.Expression
 	for rows.Next() {
 		var u server.Expression
 		if err := rows.Scan(&u.ID, &u.MathExpr, &u.Status, &u.Result); err != nil {
 			log.Fatal(err)
 		}
-		users = append(users, u)
+		res = append(res, u)
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
 	}
 
-	json.NewEncoder(w).Encode(users)
+	Process(res)
+	//fmt.Println(res)
+
+	for _, expr := range res {
+		json.NewDecoder(r.Body).Decode(&expr)
+
+		_, err = db.Exec("UPDATE Expressions SET Status='complete', Result = $1 WHERE MathExpr = $2", mapa[expr.MathExpr], expr.MathExpr)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+	}
 }
