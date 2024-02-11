@@ -1,20 +1,140 @@
 package agent
 
 import (
+	"container/list"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
+	"net/http"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
+
+	server "1/cmd/app/server"
 )
 
-func EvaluateExpression(expr string) (float64, error) {
+type worker struct {
+	pool     *Pool
+	jobsChan chan string
+	quit     chan *sync.WaitGroup
+}
+
+var (
+	ErrPoolClosed = errors.New("pool is closed")
+	ErrQueueFull  = errors.New("queue is full")
+)
+
+type Pool struct {
+	// Amount of workers in pool
+	Size int
+	// Amount of jobs that can be in queue
+	QueueSize int
+
+	finish      bool
+	jobsQueue   chan string
+	freeWorkers chan *worker
+	workers     *list.List
+}
+
+func (w *worker) start() {
+	w.jobsChan = make(chan string, 1)
+	w.quit = make(chan *sync.WaitGroup, 1)
+
+	go func() {
+		for {
+			w.pool.freeWorkers <- w
+
+			select {
+			case job := <-w.jobsChan:
+				w.doJob(job)
+
+			case wg := <-w.quit:
+				wg.Done()
+				return
+			}
+		}
+	}()
+}
+
+func (w *worker) doJob(job string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("panic in job %s: %s", job, r)
+		}
+	}()
+
+	fmt.Println(EvaluateExpression(job))
+}
+
+func (p *Pool) Init() {
+	p.jobsQueue = make(chan string, p.QueueSize)
+	p.freeWorkers = make(chan *worker, p.Size)
+	p.workers = list.New()
+}
+
+func (p *Pool) Start() {
+	for i := 0; i < p.Size; i++ {
+		w := &worker{
+			pool: p,
+		}
+		p.workers.PushFront(w)
+		w.start()
+	}
+
+	go func() {
+		for job := range p.jobsQueue {
+			// Wait for the free worker
+			w := <-p.freeWorkers
+
+			// Send job to worker
+			w.jobsChan <- job
+		}
+	}()
+}
+
+func (p *Pool) AddJob(data string) error {
+	if p.finish {
+		return ErrPoolClosed
+	}
+	select {
+	case p.jobsQueue <- data:
+	default:
+		return ErrQueueFull
+	}
+	return nil
+}
+
+func (p *Pool) GetQueueLength() int {
+	return len(p.jobsQueue)
+}
+
+func (p *Pool) GetActiveWorkers() int {
+	return p.Size - len(p.freeWorkers)
+}
+
+func (p *Pool) Finish() {
+	log.Println("Finishing all jobs...")
+	p.finish = true
+	for len(p.jobsQueue) != 0 {
+		time.Sleep(50 * time.Millisecond)
+	}
+	wg := &sync.WaitGroup{}
+	wg.Add(p.Size)
+	for e := p.workers.Front(); e != nil; e = e.Next() {
+		e.Value.(*worker).quit <- wg
+	}
+	wg.Wait()
+}
+
+func EvaluateExpression(expr string) float64 {
 	tokens := tokenize(expr)
-	fmt.Println(tokens)
 	// Преобразование в обратную польскую нотацию
 	rpn := shuntingYard(tokens)
-	fmt.Println(rpn)
 	// Вычисление результата
-	result, err := evaluateRPN(rpn)
-	return result, err
+	result, _ := evaluateRPN(rpn)
+	return result
 }
 
 func tokenize(expr string) []string {
@@ -103,4 +223,53 @@ func evaluateRPN(tokens []string) (float64, error) {
 		return stack[0], nil
 	}
 	return 0, fmt.Errorf("Invalid expression")
+}
+
+func Process(Expressions []string) string {
+	pool := &Pool{
+		Size:      len(Expressions),
+		QueueSize: len(Expressions),
+	}
+
+	pool.Init()
+
+	pool.Start()
+
+	// Add some jobs to the pool
+	for i := 0; i < 8; i++ {
+		if err := pool.AddJob(Expressions[i]); err != nil {
+			log.Printf("Error adding job: %v", err)
+		}
+	}
+
+	log.Printf("Queue length: %d", pool.GetQueueLength())
+	log.Printf("Active workers: %d", pool.GetActiveWorkers())
+
+	// Finish all jobs and workers
+	pool.Finish()
+	return ""
+}
+
+func CalculateHandler(w http.ResponseWriter, r *http.Request) {
+	db := server.Database()
+	defer db.Close()
+	rows, err := db.Query("SELECT * FROM Expressions WHERE status='pending'")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	users := []server.Expression{} // array of users
+	for rows.Next() {
+		var u server.Expression
+		if err := rows.Scan(&u.ID, &u.MathExpr, &u.Status, &u.Result); err != nil {
+			log.Fatal(err)
+		}
+		users = append(users, u)
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	json.NewEncoder(w).Encode(users)
 }

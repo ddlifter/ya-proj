@@ -18,7 +18,7 @@ type Expression struct {
 	Result   float64 `json:"result"`
 }
 
-func database() *sql.DB {
+func Database() *sql.DB {
 	connStr := "user=postgres password=12345 dbname=postgres"
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -48,7 +48,7 @@ func Home(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetExpressions(w http.ResponseWriter, r *http.Request) {
-	db := database()
+	db := Database()
 	defer db.Close()
 	rows, err := db.Query("SELECT * FROM Expressions")
 	if err != nil {
@@ -73,7 +73,7 @@ func GetExpressions(w http.ResponseWriter, r *http.Request) {
 
 // get user by id
 func GetExpression(w http.ResponseWriter, r *http.Request) {
-	db := database()
+	db := Database()
 	defer db.Close()
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -90,7 +90,7 @@ func GetExpression(w http.ResponseWriter, r *http.Request) {
 
 // create user
 func AddExpression(w http.ResponseWriter, r *http.Request) {
-	db := database()
+	db := Database()
 	defer db.Close()
 	var u Expression
 	json.NewDecoder(r.Body).Decode(&u)
@@ -104,7 +104,7 @@ func AddExpression(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteExpression(w http.ResponseWriter, r *http.Request) {
-	db := database()
+	db := Database()
 	defer db.Close()
 	vars := mux.Vars(r)
 	id := vars["id"]
