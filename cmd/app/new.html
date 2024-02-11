@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expressions</title>
+    <style>
+        /* Простой стиль для улучшения читаемости */
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin-bottom: 5px;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Expressions</h1>
+    <div id="expressions-list"></div>
+
+    <script>
+        // Выполнение запроса к API и отображение данных на странице
+        fetch('http://localhost:8000/api/go/expressions') // Замените '/expressions' на фактический URL вашего эндпоинта
+            .then(response => response.json())
+            .then(data => {
+                const expressionsList = document.getElementById('expressions-list');
+
+                // Создаем HTML-список на основе данных, полученных из эндпоинта
+                const ul = document.createElement('ul');
+                data.forEach(expression => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>Математическое выражение:</strong> ${expression.MathExpr}<br>
+                                    <strong>Статус:</strong> ${expression.Status}<br>
+                                    <strong>Результат:</strong> ${expression.Result}`;
+                    ul.appendChild(li);
+                });
+
+                // Отображаем список на странице
+                expressionsList.appendChild(ul);
+            });
+    </script>
+</body>
+</html>

@@ -34,20 +34,24 @@ func Database() *sql.DB {
 }
 
 func Home(w http.ResponseWriter, r *http.Request) {
-	ts, err := template.ParseFiles("internal/pages/index.html")
+	tpl, err := template.ParseFiles("index.html")
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, "Internal Server Error", 500)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = ts.Execute(w, nil)
-	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, "Internal Server Error", 500)
-	}
+
+	tpl.Execute(w, nil)
 }
 
 func GetExpressions(w http.ResponseWriter, r *http.Request) {
+	tpl, err := template.ParseFiles("new.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tpl.Execute(w, nil)
+
 	db := Database()
 	defer db.Close()
 	rows, err := db.Query("SELECT * FROM Expressions")
@@ -95,7 +99,7 @@ func AddExpression(w http.ResponseWriter, r *http.Request) {
 	var u Expression
 	json.NewDecoder(r.Body).Decode(&u)
 
-	err := db.QueryRow("INSERT INTO Expressions (MathExpr, Status, Result) VALUES ($1, $2, $3) RETURNING ID", u.MathExpr, u.Status, u.Result).Scan(&u.ID)
+	err := db.QueryRow("INSERT INTO Expressions (MathExpr, Status, Result) VALUES ($1, $2, $3) RETURNING ID", u.MathExpr, "pending", u.Result).Scan(&u.ID)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Форма для отправки данных</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body>
+    <h1>Введите выражение и нажмите кнопку "Отправить"</h1>
+    <form id="expressionForm">
+        <label for="mathExpr">Введите математическое выражение:</label><br>
+        <input type="text" id="mathExpr" name="mathExpr"><br><br>
+        <button type="button" onclick="sendExpression()">Отправить</button>
+    </form>
+
+    <script>
+        function sendExpression() {
+    const mathExprInput = document.getElementById('mathExpr');
+    const mathExpr = mathExprInput.value;
+    const data = { MathExpr: mathExpr, Result: "" };
+
+    fetch('http://localhost:8000/api/go/expressions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Ответ от сервера:', data);
+        // Дополнительные действия при успешной отправке данных
+        mathExprInput.value = ''; // Очистка поля ввода
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+        // Дополнительные действия при ошибке отправки данных
+    });
+}
+    </script>
+</body>
+</html>
