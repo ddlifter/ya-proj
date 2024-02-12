@@ -8,37 +8,88 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 </head>
 <body>
-    <h1>Введите выражение и нажмите кнопку "Отправить"</h1>
+    <h1>Введите выражение и нажмите кнопку "Добавить"</h1>
     <form id="expressionForm">
         <label for="mathExpr">Введите математическое выражение:</label><br>
         <input type="text" id="mathExpr" name="mathExpr"><br><br>
-        <button type="button" onclick="sendExpression()">Отправить</button>
+        <button type="button" onclick="sendExpression()">Добавить</button>
     </form>
+
+    <div id="expressions-list"></div>
+
+    <button type="button" onclick="sendToAgent()">Начать вычисления</button>
+    <a href="http://localhost:8000/api/go/expressions" target="_blank">
+        <button>Открыть список выражений</button>
+    </a>
 
     <script>
         function sendExpression() {
-    const mathExprInput = document.getElementById('mathExpr');
-    const mathExpr = mathExprInput.value;
-    const data = { MathExpr: mathExpr, Result: "" };
+            const mathExprInput = document.getElementById('mathExpr');
+            const mathExpr = mathExprInput.value;
+            const data = { MathExpr: mathExpr, Result: "", Status: "не отправлено" };
 
-    fetch('http://localhost:8000/api/go/expressions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Ответ от сервера:', data);
-        // Дополнительные действия при успешной отправке данных
-        mathExprInput.value = ''; // Очистка поля ввода
-    })
-    .catch(error => {
-        console.error('Ошибка:', error);
-        // Дополнительные действия при ошибке отправки данных
-    });
-}
+            fetch('http://localhost:8000/api/go/expressions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Ответ от сервера:', data);
+                mathExprInput.value = ''; // Очистка поля ввода
+                updateExpressionsList(); // Обновляем список выражений на странице
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+            });
+        }
+
+        function updateExpressionsList() {
+            fetch('http://localhost:8000/api/go/expressions') // Замените '/expressions' на фактический URL вашего эндпоинта
+                .then(response => response.json())
+                .then(data => {
+                    const expressionsList = document.getElementById('expressions-list');
+                    expressionsList.innerHTML = ''; // Очищаем список перед обновлением
+
+                    data.forEach(expression => {
+                        const expressionString = expression.MathExpr;
+
+                        const expressionItem = document.createElement('div');
+                        expressionItem.textContent = expressionString;
+
+                        if (expression.Status === "отправлено на вычисление") {
+                            expressionItem.innerHTML += ' - отправлено на вычисление';
+                        }
+
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Удалить';
+                        deleteButton.addEventListener('click', () => deleteExpression(expression.ID));
+                        expressionItem.appendChild(deleteButton);
+
+                        expressionsList.appendChild(expressionItem);
+                    });
+                });
+        }
+
+        function deleteExpression(expressionId) {
+            fetch('http://localhost:8000/api/go/expressions/${expressionId}', {
+                method: 'DELETE'
+            })
+            .then(() => updateExpressionsList())
+            .catch(error => console.error('Ошибка при удалении:', error));
+        }
+
+        function sendToAgent() {
+            fetch('http://localhost:8000/api/go/expressions/agent', {
+                method: 'GET'
+            })
+            .then(() => updateExpressionsList())
+            .catch(error => console.error('Ошибка при отправке на вычисление:', error));
+        }
+
+        updateExpressionsList(); // Инициализация списка выражений при загрузке страницы
     </script>
 </body>
 </html>
