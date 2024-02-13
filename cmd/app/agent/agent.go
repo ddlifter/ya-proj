@@ -15,6 +15,14 @@ import (
 	server "1/cmd/app/server"
 )
 
+// переменные имитации задержки
+var (
+	plus  time.Duration = 1
+	minus time.Duration = 1
+	div   time.Duration = 1
+	mult  time.Duration = 1
+)
+
 var mapa = make(map[string]float64)
 
 type worker struct {
@@ -211,12 +219,16 @@ func evaluateRPN(tokens []string) (float64, error) {
 			stack = stack[:len(stack)-2]
 			switch token {
 			case "+":
+				time.Sleep(plus * time.Second)
 				stack = append(stack, operand1+operand2)
 			case "-":
+				time.Sleep(minus * time.Second)
 				stack = append(stack, operand1-operand2)
 			case "*":
+				time.Sleep(div * time.Second)
 				stack = append(stack, operand1*operand2)
 			case "/":
+				time.Sleep(mult * time.Second)
 				stack = append(stack, operand1/operand2)
 			}
 		}

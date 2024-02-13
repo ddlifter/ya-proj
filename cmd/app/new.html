@@ -10,16 +10,16 @@
     <h1>Expressions</h1>
     <div id="expressions-list"></div>
 
-    <script>
+    <script>  
         // Выполнение запроса к API и отображение данных на странице
-        fetch('http://localhost:8000/api/go/expressions') // Замените '/expressions' на фактический URL вашего эндпоинта
+        fetch('http://localhost:8000/api/go/expressions') 
     .then(response => response.json())
     .then(data => {
+        console.log("gtdgrd");
         const expressionsList = document.getElementById('expressions-list');
-
         // Создаем строки для каждого математического выражения
         data.forEach(expression => {
-            const expressionString = ${expression.MathExpr} : ${expression.Result} (${expression.Status});
+            const expressionString = expression.MathExpr;
 
             // Создаем элемент для строки и добавляем текст
             const expressionItem = document.createElement('div');
