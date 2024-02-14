@@ -2,6 +2,7 @@ package agent
 
 import (
 	"container/list"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,10 +18,10 @@ import (
 
 // переменные имитации задержки
 var (
-	plus  time.Duration = 1
-	minus time.Duration = 1
-	div   time.Duration = 1
-	mult  time.Duration = 1
+	plus  int = 1
+	minus int = 1
+	div   int = 1
+	mult  int = 1
 )
 
 var mapa = make(map[string]float64)
@@ -29,6 +30,11 @@ type worker struct {
 	pool     *Pool
 	jobsChan chan server.Expression
 	quit     chan *sync.WaitGroup
+}
+
+type Operations struct {
+	Operation string `json:"operation"`
+	Time      string `json:"time"`
 }
 
 var (
@@ -46,6 +52,63 @@ type Pool struct {
 	jobsQueue   chan server.Expression
 	freeWorkers chan *worker
 	workers     *list.List
+}
+
+func dbAgent() *sql.DB {
+	connStr := "user=postgres password=12345 dbname=postgres"
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS operations (Operation TEXT, Time TEXT)")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return db
+}
+
+func UpdateOperations(w http.ResponseWriter, r *http.Request) {
+	db := dbAgent()
+	defer db.Close()
+	var ops Operations
+	err := json.NewDecoder(r.Body).Decode(&ops)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err = db.Exec("UPDATE operations SET time = $1 WHERE operation = $2", ops.Time, ops.Operation)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rows, err := db.Query("SELECT * FROM operations")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var operation, time string
+		if err := rows.Scan(&operation, &time); err != nil {
+			log.Fatal(err)
+		}
+		switch operation {
+		case "plus":
+			plus, _ = strconv.Atoi(time)
+		case "minus":
+			minus, _ = strconv.Atoi(time)
+		case "mult":
+			mult, _ = strconv.Atoi(time)
+		case "div":
+			div, _ = strconv.Atoi(time)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (w *worker) start() {
@@ -219,16 +282,16 @@ func evaluateRPN(tokens []string) (float64, error) {
 			stack = stack[:len(stack)-2]
 			switch token {
 			case "+":
-				time.Sleep(plus * time.Second)
+				time.Sleep(time.Duration(plus) * time.Second)
 				stack = append(stack, operand1+operand2)
 			case "-":
-				time.Sleep(minus * time.Second)
+				time.Sleep(time.Duration(minus) * time.Second)
 				stack = append(stack, operand1-operand2)
 			case "*":
-				time.Sleep(div * time.Second)
+				time.Sleep(time.Duration(mult) * time.Second)
 				stack = append(stack, operand1*operand2)
 			case "/":
-				time.Sleep(mult * time.Second)
+				time.Sleep(time.Duration(div) * time.Second)
 				stack = append(stack, operand1/operand2)
 			}
 		}

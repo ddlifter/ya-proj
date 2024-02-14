@@ -1,5 +1,3 @@
-
-<!doctype html>
 <html lang="ru">
 <head>
   <meta charset="utf-8">
@@ -87,15 +85,23 @@
             <input type="text" id="mathExpr" name="mathExpr"><br><br>
             <button type="button" onclick="sendExpression()">Добавить</button>
         </form>
-    
-        <div id="expressions-list"></div>
-    
         <button type="button" onclick="sendToAgent()">Начать вычисления</button>
     </div>
     <div class="tab-content" id="content-2">
-        <h1>Expressions</h1>
-        <div id="expressions-list"></div>
-        <button type="button" onclick="updateExpressionsList()">Отобразить</button>
+        <h1>Operations</h1>
+        <label for="plus">Операция +</label><br>
+        <input type="text" id="plus" name="plus"><br><br>
+
+        <label for="minus">Операция -</label><br>
+        <input type="text" id="minus" name="minus"><br><br>
+
+        <label for="mult">Операция *</label><br>
+        <input type="text" id="mult" name="mult"><br><br>
+
+        <label for="div">Операция /</label><br>
+        <input type="text" id="div" name="div"><br><br>
+
+        <button type="button" onclick="sendOperations()">Обновить операции</button>
     </div>
     <div class="tab-content" id="content-3">
       Содержимое 3... Lorem ipsum dolor sit, amet consectetur adipisicing elit. Similique eaque iure debitis nostrum,
@@ -129,38 +135,46 @@
     .then(data => {
         console.log('Ответ от сервера:', data);
         mathExprInput.value = ''; // Очистка поля ввода
-        updateExpressionsList(); // Обновляем список выражений на странице
     })
     .catch(error => {
         console.error('Ошибка:', error);
     });
 }
 
-function updateExpressionsList() {
-    fetch('http://localhost:8000/api/go/expressions') // Замените '/expressions' на фактический URL вашего эндпоинта
-        .then(response => response.json())
-        .then(data => {
-            const expressionsList = document.getElementById('expressions-list');
-            expressionsList.innerHTML = ''; // Очищаем список перед обновлением
+function sendOperations() {
+    const plusInput = document.getElementById('plus');
+    const minusInput = document.getElementById('minus');
+    const multInput = document.getElementById('mult');
+    const divInput = document.getElementById('div');
+    console.log(plusInput)
 
-            data.forEach(expression => {
-                const expressionString = expression.MathExpr;
+    const plus = plusInput.value;
+    const minus = minusInput.value;
+    const mult = multInput.value;
+    const div = divInput.value;
+    console.log(plus)
 
-                const expressionItem = document.createElement('div');
-                expressionItem.textContent = expressionString;
+    const data = { plus: plus, minus: minus, mult: mult, div: div };
+    console.log(data)
 
-                if (expression.Status === "отправлено на вычисление") {
-                    expressionItem.innerHTML += ' - отправлено на вычисление';
-                }
-
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = 'Удалить';
-                deleteButton.addEventListener('click', () => deleteExpression(expression.ID));
-                expressionItem.appendChild(deleteButton);
-
-                expressionsList.appendChild(expressionItem);
-            });
-        });
+    fetch('http://localhost:8000/api/go/operations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Ответ от сервера:', data);
+        plusInput.value = ''; // Очистка поля ввода
+        minus.value = '';
+        multInput.value = '';
+        divInput.value = '';
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+    });
 }
 
 function deleteExpression(expressionId) {
@@ -175,10 +189,8 @@ function sendToAgent() {
     fetch('http://localhost:8000/api/go/expressions/agent', {
         method: 'GET'
     })
-    .then(() => updateExpressionsList())
     .catch(error => console.error('Ошибка при отправке на вычисление:', error));
 }
-
 </script>
 </body>
 

@@ -60,13 +60,13 @@ func GetExpressions(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	users := []Expression{} // array of users
+	users := map[string]Expression{} // map of users
 	for rows.Next() {
 		var u Expression
 		if err := rows.Scan(&u.ID, &u.MathExpr, &u.Status, &u.Result); err != nil {
 			log.Fatal(err)
 		}
-		users = append(users, u)
+		users[u.ID] = u
 	}
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
@@ -127,5 +127,28 @@ func DeleteExpression(w http.ResponseWriter, r *http.Request) {
 		}
 
 		json.NewEncoder(w).Encode("User deleted")
+	}
+}
+
+func DeleteExpressions(w http.ResponseWriter, r *http.Request) {
+	db := Database()
+	defer db.Close()
+	rows, err := db.Query("SELECT ID FROM Expressions")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var u Expression
+		if err := rows.Scan(&u.ID); err != nil {
+			log.Fatal(err)
+		}
+		_, err := db.Exec("DELETE FROM Expressions WHERE id = $1", u.ID)
+		if err != nil {
+			// todo : fix error handling
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
 	}
 }
