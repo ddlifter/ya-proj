@@ -21,7 +21,7 @@ func main() {
 	router.HandleFunc("/api/go/expression/{id}", server.GetExpression).Methods("GET")
 	router.HandleFunc("/api/go/expression/{id}", server.DeleteExpression).Methods("DELETE")
 	router.HandleFunc("/api/go/expressions", server.DeleteExpressions).Methods("DELETE")
-	router.HandleFunc("/api/go/operations", agent.UpdateOperations).Methods("GET")
+	router.HandleFunc("/api/go/operations", agent.UpdateOperations).Methods("POST")
 	log.Fatal(http.ListenAndServe(":8000", router))
 	// // create router
 

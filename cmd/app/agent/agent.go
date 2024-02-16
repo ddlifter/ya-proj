@@ -20,7 +20,7 @@ import (
 
 // переменные имитации задержки
 var (
-	plus  int = 5
+	plus  int = 1
 	minus int = 1
 	div   int = 1
 	mult  int = 1
@@ -108,6 +108,7 @@ func UpdateOperations(w http.ResponseWriter, r *http.Request) {
 			div, _ = strconv.Atoi(time)
 		}
 	}
+	fmt.Println(plus)
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
 	}
@@ -160,7 +161,6 @@ func (p *Pool) Start() {
 
 	go func() {
 		for job := range p.jobsQueue {
-			fmt.Println(job)
 			// Wait for the free worker
 			w := <-p.freeWorkers
 

@@ -154,10 +154,8 @@ function sendOperations() {
     const minus = minusInput.value;
     const mult = multInput.value;
     const div = divInput.value;
-    console.log(plus)
 
-    const data = { plus: plus, minus: minus, mult: mult, div: div };
-    console.log(data)
+    const data = {'operation': 'plus', 'time': plus};
 
     fetch('http://localhost:8000/api/go/operations', {
         method: 'POST',
@@ -169,10 +167,57 @@ function sendOperations() {
     .then(response => response.json())
     .then(data => {
         console.log('Ответ от сервера:', data);
-        plusInput.value = ''; // Очистка поля ввода
-        minus.value = '';
-        multInput.value = '';
-        divInput.value = '';
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+    });
+
+    const data2 = {'operation': 'minus', 'time': minus};
+
+    fetch('http://localhost:8000/api/go/operations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data2)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Ответ от сервера:', data);
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+    });
+
+    const data3 = {'operation': 'mult', 'time': mult};
+
+    fetch('http://localhost:8000/api/go/operations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data3)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Ответ от сервера:', data);
+    })
+    .catch(error => {
+        console.error('Ошибка:', error);
+    });
+
+    const data4 = {'operation': 'div', 'time': div};
+
+    fetch('http://localhost:8000/api/go/operations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data4)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Ответ от сервера:', data);
     })
     .catch(error => {
         console.error('Ошибка:', error);
@@ -192,30 +237,6 @@ function sendToAgent() {
         method: 'GET'
     })
     .catch(error => console.error('Ошибка при отправке на вычисление:', error));
-}
-
-function A() {
-  fetch('http://localhost:8000/api/go/expressions') 
-          .then(response => response.json())
-          .then(data => {
-              const expressionsList = document.getElementById('expressions-list');
-              
-              // Создаем строки для каждого математического выражения
-              data.forEach(expression => {
-                  const expressionString = data.MathExpr;
-      
-                  // Создаем элемент для строки и добавляем текст
-                  const expressionItem = document.createElement('div');
-                  expressionItem.textContent = expressionString;
-      
-                  // Добавляем каждую строку на страницу по отдельности
-                  expressionsList.appendChild(expressionItem);
-      
-                  // Добавляем разделительную линию между строками
-                  const hr = document.createElement('hr');
-                  expressionsList.appendChild(hr);
-              });
-          });
 }
 </script>
 </body>
