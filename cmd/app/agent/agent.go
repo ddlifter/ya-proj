@@ -14,11 +14,13 @@ import (
 	"time"
 
 	server "1/cmd/app/server"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // переменные имитации задержки
 var (
-	plus  int = 1
+	plus  int = 5
 	minus int = 1
 	div   int = 1
 	mult  int = 1
@@ -55,8 +57,7 @@ type Pool struct {
 }
 
 func dbAgent() *sql.DB {
-	connStr := "user=postgres password=12345 dbname=postgres"
-	db, err := sql.Open("postgres", connStr)
+	db, err := sql.Open("sqlite3", "store.db")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,6 +66,7 @@ func dbAgent() *sql.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
+	db.Exec("PRAGMA journal_mode=WAL")
 
 	return db
 }
@@ -79,7 +81,7 @@ func UpdateOperations(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec("UPDATE operations SET time = $1 WHERE operation = $2", ops.Time, ops.Operation)
+	_, err = db.Exec("UPDATE operations SET time = ? WHERE operation = ?", ops.Time, ops.Operation)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -158,6 +160,7 @@ func (p *Pool) Start() {
 
 	go func() {
 		for job := range p.jobsQueue {
+			fmt.Println(job)
 			// Wait for the free worker
 			w := <-p.freeWorkers
 
@@ -330,7 +333,7 @@ func Process(Expressions []server.Expression) {
 func CalculateHandler(w http.ResponseWriter, r *http.Request) {
 	db := server.Database()
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM Expressions WHERE status='pending'")
+	rows, err := db.Query("SELECT * FROM Expressions WHERE Status='pending'")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -349,15 +352,19 @@ func CalculateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	Process(res)
-	//fmt.Println(res)
 
 	for _, expr := range res {
-		json.NewDecoder(r.Body).Decode(&expr)
+		tokens := tokenize(expr.MathExpr)
+		rpnTokens := shuntingYard(tokens)
+		result, err := evaluateRPN(rpnTokens)
+		if err != nil {
+			log.Printf("Error evaluating expression: %v", err)
+			continue
+		}
 
-		_, err = db.Exec("UPDATE Expressions SET Status='complete', Result = $1 WHERE MathExpr = $2", mapa[expr.MathExpr], expr.MathExpr)
+		_, err = db.Exec("UPDATE Expressions SET Status='complete', Result=$1 WHERE MathExpr=$2", result, expr.MathExpr)
 		if err != nil {
 			log.Fatal(err)
 		}
-
 	}
 }

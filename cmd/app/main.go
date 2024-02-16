@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+	log.Print("server has started")
 
 	router := mux.NewRouter()
 	router.HandleFunc("/api/go/", server.Home)

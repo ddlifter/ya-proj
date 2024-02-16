@@ -86,6 +86,8 @@
             <button type="button" onclick="sendExpression()">Добавить</button>
         </form>
         <button type="button" onclick="sendToAgent()">Начать вычисления</button>
+        <h1>Go to Expressions Page</h1>
+      <button onclick="window.location.href='http://localhost:8000/api/go/expressions'">Go to Expressions</button>
     </div>
     <div class="tab-content" id="content-2">
         <h1>Operations</h1>
@@ -190,6 +192,30 @@ function sendToAgent() {
         method: 'GET'
     })
     .catch(error => console.error('Ошибка при отправке на вычисление:', error));
+}
+
+function A() {
+  fetch('http://localhost:8000/api/go/expressions') 
+          .then(response => response.json())
+          .then(data => {
+              const expressionsList = document.getElementById('expressions-list');
+              
+              // Создаем строки для каждого математического выражения
+              data.forEach(expression => {
+                  const expressionString = data.MathExpr;
+      
+                  // Создаем элемент для строки и добавляем текст
+                  const expressionItem = document.createElement('div');
+                  expressionItem.textContent = expressionString;
+      
+                  // Добавляем каждую строку на страницу по отдельности
+                  expressionsList.appendChild(expressionItem);
+      
+                  // Добавляем разделительную линию между строками
+                  const hr = document.createElement('hr');
+                  expressionsList.appendChild(hr);
+              });
+          });
 }
 </script>
 </body>
