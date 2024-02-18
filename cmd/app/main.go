@@ -13,7 +13,10 @@ import (
 func main() {
 	log.Print("server has started")
 
+	// Создание маршрутизатора
 	router := mux.NewRouter()
+
+	// Маршруты
 	router.HandleFunc("/api/go/", server.Home)
 	router.HandleFunc("/api/go/expressions/agent", agent.CalculateHandler).Methods("GET")
 	router.HandleFunc("/api/go/expressions", server.GetExpressions).Methods("GET")
@@ -22,10 +25,8 @@ func main() {
 	router.HandleFunc("/api/go/expression/{id}", server.DeleteExpression).Methods("DELETE")
 	router.HandleFunc("/api/go/expressions", server.DeleteExpressions).Methods("DELETE")
 	router.HandleFunc("/api/go/operations", agent.UpdateOperations).Methods("POST")
-	log.Fatal(http.ListenAndServe(":8000", router))
-	// // create router
+	router.HandleFunc("/api/go/agents", agent.AgentHandler).Methods("GET")
 
-	// // start server
-	// fmt.Println("Server is running on :8000")
-	// http.ListenAndServe(":8000", nil)
+	// Запуск сервера
+	log.Fatal(http.ListenAndServe(":8000", router))
 }

@@ -7,31 +7,9 @@
 </head>
 <body>
     <h1>Expressions</h1>
-    <div id="expressions-list"></div>
-
     <script>  
         // Выполнение запроса к API и отображение данных на странице
         fetch('http://localhost:8000/api/go/expressions') 
-    .then(response => response.json())
-    .then(data => {
-        const expressionsList = document.getElementById('expressions-list');
-        
-        // Создаем строки для каждого математического выражения
-        data.forEach(expression => {
-            const expressionString = data.MathExpr;
-
-            // Создаем элемент для строки и добавляем текст
-            const expressionItem = document.createElement('div');
-            expressionItem.textContent = expressionString;
-
-            // Добавляем каждую строку на страницу по отдельности
-            expressionsList.appendChild(expressionItem);
-
-            // Добавляем разделительную линию между строками
-            const hr = document.createElement('hr');
-            expressionsList.appendChild(hr);
-        });
-    });
     </script>
 </body>
 </html>

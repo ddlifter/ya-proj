@@ -2,7 +2,7 @@
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1" name="viewport">
-  <title>Название</title>
+  <title>Вычислитель</title>
 </head>
 
 <body>
@@ -86,8 +86,10 @@
             <button type="button" onclick="sendExpression()">Добавить</button>
         </form>
         <button type="button" onclick="sendToAgent()">Начать вычисления</button>
-        <h1>Go to Expressions Page</h1>
-      <button onclick="window.location.href='http://localhost:8000/api/go/expressions'">Go to Expressions</button>
+        <h1>Перейти на страницу с задачами</h1>
+      <button onclick="window.location.href='http://localhost:8000/api/go/expressions'">Задачи</button>
+      <h1>Перейти на страницу агентов</h1>
+      <button onclick="window.location.href='http://localhost:8000/api/go/agents'">Агенты</button>
     </div>
     <div class="tab-content" id="content-2">
         <h1>Operations</h1>
@@ -105,18 +107,11 @@
 
         <button type="button" onclick="sendOperations()">Обновить операции</button>
     </div>
-    <div class="tab-content" id="content-3">
-      Содержимое 3... Lorem ipsum dolor sit, amet consectetur adipisicing elit. Similique eaque iure debitis nostrum,
-      vero ad totam ratione sequi! Suscipit, labore repellat cum soluta ullam dignissimos perspiciatis sequi rerum
-      sapiente ex.
-    </div>
     <div class="tab-nav">
       <input checked id="tab-btn-1" name="tab-btn" type="radio" value="">
       <label for="tab-btn-1">Home</label>
       <input id="tab-btn-2" name="tab-btn" type="radio" value="">
       <label for="tab-btn-2">Operations</label>
-      <input id="tab-btn-3" name="tab-btn" type="radio" value="">
-      <label for="tab-btn-3">Agents</label>
     </div>
   </div>
 </div>
@@ -222,14 +217,6 @@ function sendOperations() {
     .catch(error => {
         console.error('Ошибка:', error);
     });
-}
-
-function deleteExpression(expressionId) {
-    fetch('http://localhost:8000/api/go/expressions/${expressionId}', {
-        method: 'DELETE'
-    })
-    .then(() => updateExpressionsList())
-    .catch(error => console.error('Ошибка при удалении:', error));
 }
 
 function sendToAgent() {
