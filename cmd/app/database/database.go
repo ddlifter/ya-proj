@@ -21,13 +21,12 @@ type Operations struct {
 
 // Открытие соединения бд с задачами
 func Database() *sql.DB {
-	db, err := sql.Open("sqlite3", "store.db")
+	db, err := sql.Open("postgres", "postgres://postgres:12345@localhost/postgres?sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}
-	db.Exec("PRAGMA journal_mode=WAL")
 
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS Expressions (id INTEGER PRIMARY KEY AUTOINCREMENT, MathExpr TEXT, Status TEXT, Result REAL)")
+	_, err = db.Exec("CREATE TABLE IF NOT EXISTS Expressions (id SERIAL PRIMARY KEY, MathExpr TEXT, Status TEXT, Result REAL)")
 	if err != nil {
 		log.Fatal(err)
 	}

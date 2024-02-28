@@ -17,7 +17,7 @@ func main() {
 	router := mux.NewRouter()
 
 	// Маршруты
-	router.HandleFunc("/api/go/", server.Home)
+	//router.HandleFunc("/api/go/", server.Home)
 	router.HandleFunc("/api/go/expressions/agent", agent.CalculateHandler).Methods("GET")
 	router.HandleFunc("/api/go/expressions", server.GetExpressions).Methods("GET")
 	router.HandleFunc("/api/go/expressions", server.AddExpression).Methods("POST")

@@ -2,7 +2,6 @@ package server
 
 import (
 	"encoding/json"
-	"html/template"
 	"log"
 	"net/http"
 
@@ -12,27 +11,19 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// Домашняя страница
-func Home(w http.ResponseWriter, r *http.Request) {
-	tpl, err := template.ParseFiles("index.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+// // Домашняя страница
+// func Home(w http.ResponseWriter, r *http.Request) {
+// 	tpl, err := template.ParseFiles("index.html")
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
 
-	tpl.Execute(w, nil)
-}
+// 	tpl.Execute(w, nil)
+// }
 
 // Вывести все задачи
 func GetExpressions(w http.ResponseWriter, r *http.Request) {
-	tpl, err := template.ParseFiles("new.html")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	tpl.Execute(w, nil)
-
 	db := database.Database()
 	defer db.Close()
 	rows, err := db.Query("SELECT * FROM Expressions")
@@ -64,7 +55,7 @@ func GetExpression(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	var u database.Expression
-	err := db.QueryRow("SELECT * FROM Expressions WHERE id = ?", id).Scan(&u.ID, &u.MathExpr, &u.Status, &u.Result)
+	err := db.QueryRow("SELECT * FROM Expressions WHERE id = $1", id).Scan(&u.ID, &u.MathExpr, &u.Status, &u.Result)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
@@ -80,7 +71,7 @@ func AddExpression(w http.ResponseWriter, r *http.Request) {
 	var u database.Expression
 	json.NewDecoder(r.Body).Decode(&u)
 
-	res, err := db.Exec("INSERT INTO Expressions (MathExpr, Status, Result) VALUES (?, ?, ?)", u.MathExpr, "waiting", u.Result)
+	res, err := db.Exec("INSERT INTO Expressions (MathExpr, Status, Result) VALUES ($1, $2, $3)", u.MathExpr, "waiting", u.Result)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -99,12 +90,12 @@ func DeleteExpression(w http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 
 	var u database.Expression
-	err := db.QueryRow("SELECT * FROM Expressions WHERE id = ?", id).Scan(&u.ID, &u.MathExpr, &u.Status, &u.Result)
+	err := db.QueryRow("SELECT * FROM Expressions WHERE id = $1", id).Scan(&u.ID, &u.MathExpr, &u.Status, &u.Result)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	} else {
-		_, err := db.Exec("DELETE FROM Expressions WHERE id = ?", id)
+		_, err := db.Exec("DELETE FROM Expressions WHERE id = $1", id)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -129,7 +120,7 @@ func DeleteExpressions(w http.ResponseWriter, r *http.Request) {
 		if err := rows.Scan(&u.ID); err != nil {
 			log.Fatal(err)
 		}
-		_, err := db.Exec("DELETE FROM Expressions WHERE id = ?", u.ID)
+		_, err := db.Exec("DELETE FROM Expressions WHERE id = $1", u.ID)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
