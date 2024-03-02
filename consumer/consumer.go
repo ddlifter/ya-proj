@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 
+	calc "1/cmd/app/calculate"
+
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -54,7 +56,7 @@ func main() {
 
 	go func() {
 		for message := range messages {
-			log.Printf("received a message: %s", message.Body)
+			log.Printf("received a message: %f", calc.EvaluateExpression(string(message.Body)))
 		}
 	}()
 

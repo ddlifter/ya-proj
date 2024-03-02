@@ -36,7 +36,7 @@ func Database() *sql.DB {
 
 // Открытие соединения бд с операциями
 func DbOperation() *sql.DB {
-	db, err := sql.Open("sqlite3", "store.db")
+	db, err := sql.Open("postgres", "postgres://postgres:12345@localhost/postgres?sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -45,23 +45,6 @@ func DbOperation() *sql.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db.Exec("PRAGMA journal_mode=WAL")
-
-	return db
-}
-
-// Открытие соединения бд с агентами
-func DbAgent() *sql.DB {
-	db, err := sql.Open("sqlite3", "store.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = db.Exec("CREATE TABLE IF NOT EXISTS agents (id INTEGER PRIMARY KEY, Status TEXT, LastPing INTEGER)")
-	if err != nil {
-		log.Fatal(err)
-	}
-	db.Exec("PRAGMA journal_mode=WAL")
 
 	return db
 }

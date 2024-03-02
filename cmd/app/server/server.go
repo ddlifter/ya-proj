@@ -6,21 +6,10 @@ import (
 	"net/http"
 
 	database "1/cmd/app/database"
+	rabbit "1/cmd/app/rabbit"
 
 	"github.com/gorilla/mux"
-	_ "github.com/mattn/go-sqlite3"
 )
-
-// // Домашняя страница
-// func Home(w http.ResponseWriter, r *http.Request) {
-// 	tpl, err := template.ParseFiles("index.html")
-// 	if err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	tpl.Execute(w, nil)
-// }
 
 // Вывести все задачи
 func GetExpressions(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +67,8 @@ func AddExpression(w http.ResponseWriter, r *http.Request) {
 
 	id, _ := res.LastInsertId()
 	u.ID = string(id)
+
+	rabbit.Rabbit(u.MathExpr)
 
 	json.NewEncoder(w).Encode(u)
 }

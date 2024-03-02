@@ -1,7 +1,7 @@
 package main
 
 import (
-	agent "1/cmd/app/agent"
+	operations "1/cmd/app/operations"
 	server "1/cmd/app/server"
 	"log"
 	"net/http"
@@ -17,16 +17,12 @@ func main() {
 	router := mux.NewRouter()
 
 	// Маршруты
-	//router.HandleFunc("/api/go/", server.Home)
-	router.HandleFunc("/api/go/expressions/agent", agent.CalculateHandler).Methods("GET")
 	router.HandleFunc("/api/go/expressions", server.GetExpressions).Methods("GET")
 	router.HandleFunc("/api/go/expressions", server.AddExpression).Methods("POST")
 	router.HandleFunc("/api/go/expression/{id}", server.GetExpression).Methods("GET")
 	router.HandleFunc("/api/go/expression/{id}", server.DeleteExpression).Methods("DELETE")
 	router.HandleFunc("/api/go/expressions", server.DeleteExpressions).Methods("DELETE")
-	router.HandleFunc("/api/go/operations", agent.UpdateOperations).Methods("POST")
-	router.HandleFunc("/api/go/agents", agent.AgentHandler).Methods("GET")
-
+	router.HandleFunc("/api/go/operations", operations.UpdateOperations).Methods("PUT")
 	// Запуск сервера
 	log.Fatal(http.ListenAndServe(":8000", router))
 }

@@ -1,4 +1,4 @@
-package main
+package rabbit
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go" // Делаем удобное имя для импорта в нашем коде
 )
 
-func main() {
+func Rabbit(MathExpr string) {
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/") // Создаем подключение к RabbitMQ
 	if err != nil {
 		log.Fatalf("unable to open connect to RabbitMQ server. Error: %s", err)
@@ -42,7 +42,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	body := "Matvei pidor"
+	body := MathExpr
 	err = ch.PublishWithContext(ctx,
 		"",     // exchange
 		q.Name, // routing key

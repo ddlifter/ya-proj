@@ -9,10 +9,10 @@ import (
 
 // переменные имитации задержки
 var (
-	Plus  int = 1
-	Minus int = 1
-	Div   int = 1
-	Mult  int = 1
+	Plus  int = 0
+	Minus int = 0
+	Div   int = 0
+	Mult  int = 0
 )
 
 // Вычисление конечного результата
