@@ -1,7 +1,10 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
+	"time"
 
 	calc "1/cmd/app/calculate"
 
@@ -54,12 +57,33 @@ func main() {
 
 	var forever chan struct{}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	go func() {
 		for message := range messages {
-			log.Printf("received a message: %f", calc.EvaluateExpression(string(message.Body)))
+			result := calc.EvaluateExpression(string(message.Body))
+			log.Printf("received a message: %f", result)
+
+			body := fmt.Sprintf("%f", result)
+			err = ch.PublishWithContext(ctx,
+				"",     // exchange
+				q.Name, // routing key
+				false,  // mandatory
+				false,  // immediate
+				amqp.Publishing{
+					ContentType: "text/plain",
+					Body:        []byte(body),
+				})
+			if err != nil {
+				log.Fatalf("failed to publish a message. Error: %s", err)
+			}
+
+			log.Printf(" [x] Sent %s\n", body)
 		}
 	}()
 
 	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
+
 }

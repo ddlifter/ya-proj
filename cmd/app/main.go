@@ -1,7 +1,6 @@
 package main
 
 import (
-	operations "1/cmd/app/operations"
 	server "1/cmd/app/server"
 	"log"
 	"net/http"
@@ -22,7 +21,6 @@ func main() {
 	router.HandleFunc("/api/go/expression/{id}", server.GetExpression).Methods("GET")
 	router.HandleFunc("/api/go/expression/{id}", server.DeleteExpression).Methods("DELETE")
 	router.HandleFunc("/api/go/expressions", server.DeleteExpressions).Methods("DELETE")
-	router.HandleFunc("/api/go/operations", operations.UpdateOperations).Methods("PUT")
 	// Запуск сервера
 	log.Fatal(http.ListenAndServe(":8000", router))
 }

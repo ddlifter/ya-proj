@@ -57,4 +57,29 @@ func Rabbit(MathExpr string) {
 	}
 
 	log.Printf(" [x] Sent %s\n", body)
+
+	messages, err := ch.Consume(
+		q.Name, // queue
+		"",     // consumer
+		true,   // auto-ack
+		false,  // exclusive
+		false,  // no-local
+		false,  // no-wait
+		nil,    // args
+	)
+	if err != nil {
+		log.Fatalf("failed to register a consumer. Error: %s", err)
+	}
+
+	var forever chan struct{}
+
+	go func() {
+		for message := range messages {
+			log.Printf("received a message: %s", string(message.Body))
+		}
+	}()
+
+	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
+	<-forever
+
 }
