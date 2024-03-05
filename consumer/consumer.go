@@ -4,12 +4,33 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
+	"sync"
 
 	calc "1/cmd/app/calculate"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
+
+type ConcurrentQueue struct {
+	queue []float64
+	mutex sync.Mutex
+}
+
+func (c *ConcurrentQueue) Enqueue(element float64) {
+	c.mutex.Lock()
+	c.queue = append(c.queue, element)
+	c.mutex.Unlock()
+}
+
+func (c *ConcurrentQueue) Dequeue() float64 {
+	c.mutex.Lock()
+	res := c.queue[0]
+	c.queue = c.queue[1:]
+	c.mutex.Unlock()
+	return res
+}
+
+var queue ConcurrentQueue
 
 func main() {
 	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
@@ -56,34 +77,68 @@ func main() {
 	}
 
 	var forever chan struct{}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 
 	go func() {
 		for message := range messages {
 			result := calc.EvaluateExpression(string(message.Body))
 			log.Printf("received a message: %f", result)
+			queue.Enqueue(result)
+			Back()
 
-			body := fmt.Sprintf("%f", result)
-			err = ch.PublishWithContext(ctx,
-				"",     // exchange
-				q.Name, // routing key
-				false,  // mandatory
-				false,  // immediate
-				amqp.Publishing{
-					ContentType: "text/plain",
-					Body:        []byte(body),
-				})
-			if err != nil {
-				log.Fatalf("failed to publish a message. Error: %s", err)
-			}
-
-			log.Printf(" [x] Sent %s\n", body)
 		}
 	}()
 
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 	<-forever
+}
 
+func Back() {
+	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/") // Создаем подключение к RabbitMQ
+	if err != nil {
+		log.Fatalf("unable to open connect to RabbitMQ server. Error: %s", err)
+	}
+
+	defer func() {
+		_ = conn.Close() // Закрываем подключение в случае удачной попытки
+	}()
+
+	ch, err := conn.Channel()
+	if err != nil {
+		log.Fatalf("failed to open channel. Error: %s", err)
+	}
+
+	defer func() {
+		_ = ch.Close() // Закрываем канал в случае удачной попытки открытия
+	}()
+
+	q, err := ch.QueueDeclare(
+		"hello", // name
+		false,   // durable
+		false,   // delete when unused
+		false,   // exclusive
+		false,   // no-wait
+		nil,     // arguments
+	)
+	if err != nil {
+		log.Fatalf("failed to declare a queue. Error: %s", err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	body := queue.Dequeue()
+	err = ch.PublishWithContext(ctx,
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(fmt.Sprintf("%f", body)),
+		})
+	if err != nil {
+		log.Fatalf("failed to publish a message. Error: %s", err)
+	}
+
+	log.Printf(" [x] Sent %f\n", body)
 }

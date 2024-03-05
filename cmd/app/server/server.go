@@ -11,6 +11,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func Home(w http.ResponseWriter, r *http.Request) {
+	rabbit.Get()
+}
+
 // Вывести все задачи
 func GetExpressions(w http.ResponseWriter, r *http.Request) {
 	db := database.Database()
