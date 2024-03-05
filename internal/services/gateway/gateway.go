@@ -1,18 +1,17 @@
-package server
+package gateway
 
 import (
 	"encoding/json"
 	"log"
 	"net/http"
 
-	database "1/cmd/app/database"
-	rabbit "1/cmd/app/rabbit"
+	database "1/internal/database"
 
 	"github.com/gorilla/mux"
 )
 
 func Home(w http.ResponseWriter, r *http.Request) {
-	rabbit.Get()
+	database.Get()
 }
 
 // Вывести все задачи
@@ -72,7 +71,7 @@ func AddExpression(w http.ResponseWriter, r *http.Request) {
 	id, _ := res.LastInsertId()
 	u.ID = string(id)
 
-	rabbit.Rabbit(u.MathExpr)
+	database.Rabbit(u.MathExpr)
 
 	json.NewEncoder(w).Encode(u)
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	server "1/cmd/app/server"
+	server "1/internal/services/gateway"
 	"log"
 	"net/http"
 

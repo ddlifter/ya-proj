@@ -6,7 +6,7 @@ import (
 	"log"
 	"sync"
 
-	calc "1/cmd/app/calculate"
+	calc "1/internal/services/agent/calculate"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )

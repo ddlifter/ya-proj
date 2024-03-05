@@ -1,12 +1,10 @@
-package rabbit
+package database
 
 import (
 	"context"
 	"log"
 	"strconv"
 	"strings"
-
-	database "1/cmd/app/database"
 
 	amqp "github.com/rabbitmq/amqp091-go" // Делаем удобное имя для импорта в нашем коде
 )
@@ -116,7 +114,7 @@ func Get() {
 			parts := strings.Split(result, ":")
 			expr := parts[0]
 			resFloat64, _ := strconv.ParseFloat(parts[1], 64)
-			database.UpdateExpression(expr, resFloat64)
+			UpdateExpression(expr, resFloat64)
 		}
 	}()
 
