@@ -82,10 +82,9 @@ func main() {
 	go func() {
 		for message := range messages {
 			result := calc.EvaluateExpression(string(message.Body))
-			log.Printf("received a message: %f", result)
-			queue.Enqueue(fmt.Sprintf("%s:%f", string(message.Body), result))
+			log.Printf("received a message: %4.2f", result)
+			queue.Enqueue(fmt.Sprintf("%s:%4.2f", string(message.Body), result))
 			Back()
-
 		}
 	}()
 
@@ -112,12 +111,12 @@ func Back() {
 	}()
 
 	q, err := ch.QueueDeclare(
-		"hello", // name
-		false,   // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
+		"second", // name
+		false,    // durable
+		false,    // delete when unused
+		false,    // exclusive
+		false,    // no-wait
+		nil,      // arguments
 	)
 	if err != nil {
 		log.Fatalf("failed to declare a queue. Error: %s", err)

@@ -82,12 +82,12 @@ func Get() {
 	}()
 
 	q, err := ch.QueueDeclare(
-		"hello", // name
-		false,   // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
+		"second", // name
+		false,    // durable
+		false,    // delete when unused
+		false,    // exclusive
+		false,    // no-wait
+		nil,      // arguments
 	)
 	if err != nil {
 		log.Fatalf("failed to declare a queue. Error: %s", err)
