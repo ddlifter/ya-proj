@@ -12,17 +12,17 @@ import (
 )
 
 type ConcurrentQueue struct {
-	queue []float64
+	queue []string
 	mutex sync.Mutex
 }
 
-func (c *ConcurrentQueue) Enqueue(element float64) {
+func (c *ConcurrentQueue) Enqueue(element string) {
 	c.mutex.Lock()
 	c.queue = append(c.queue, element)
 	c.mutex.Unlock()
 }
 
-func (c *ConcurrentQueue) Dequeue() float64 {
+func (c *ConcurrentQueue) Dequeue() string {
 	c.mutex.Lock()
 	res := c.queue[0]
 	c.queue = c.queue[1:]
@@ -83,7 +83,7 @@ func main() {
 		for message := range messages {
 			result := calc.EvaluateExpression(string(message.Body))
 			log.Printf("received a message: %f", result)
-			queue.Enqueue(result)
+			queue.Enqueue(fmt.Sprintf("%s:%f", string(message.Body), result))
 			Back()
 
 		}
@@ -134,11 +134,11 @@ func Back() {
 		false,  // immediate
 		amqp.Publishing{
 			ContentType: "text/plain",
-			Body:        []byte(fmt.Sprintf("%f", body)),
+			Body:        []byte(body),
 		})
 	if err != nil {
 		log.Fatalf("failed to publish a message. Error: %s", err)
 	}
 
-	log.Printf(" [x] Sent %f\n", body)
+	log.Printf(" [x] Sent %s\n", body)
 }

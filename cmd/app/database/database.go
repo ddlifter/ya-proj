@@ -27,3 +27,15 @@ func Database() *sql.DB {
 
 	return db
 }
+
+func UpdateExpression(MathExpr string, Result float64) {
+	db, err := sql.Open("postgres", "postgres://postgres:12345@localhost/postgres?sslmode=disable")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = db.Exec("UPDATE Expressions SET Result = $1, Status = $2 WHERE MathExpr = $3", Result, "completed", MathExpr)
+	if err != nil {
+		log.Fatal(err)
+	}
+}

@@ -3,6 +3,10 @@ package rabbit
 import (
 	"context"
 	"log"
+	"strconv"
+	"strings"
+
+	database "1/cmd/app/database"
 
 	amqp "github.com/rabbitmq/amqp091-go" // Делаем удобное имя для импорта в нашем коде
 )
@@ -107,8 +111,12 @@ func Get() {
 
 	go func() {
 		for message := range messages {
-			log.Printf("received a message: %s", string(message.Body))
-
+			result := string(message.Body)
+			log.Printf("received a message: %s", result)
+			parts := strings.Split(result, ":")
+			expr := parts[0]
+			resFloat64, _ := strconv.ParseFloat(parts[1], 64)
+			database.UpdateExpression(expr, resFloat64)
 		}
 	}()
 
