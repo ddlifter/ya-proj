@@ -3,6 +3,10 @@ package calculate
 import "testing"
 
 func TestEvaluateExpression(t *testing.T) {
+	Plus = 0
+	Minus = 0
+	Mult = 0
+	Div = 0
 	tests := []struct {
 		input    string
 		expected float64
