@@ -1,3 +1,4 @@
+//Временно неактуально, проект в стадии разработки
 <h1 align="center">Распределенный вычислитель арифметических выражений <a target="_blank">ddlifter</a> 
 <img src="https://github.com/blackcater/blackcater/raw/main/images/Hi.gif" height="32"/></h1>
 <h3 align="center">Данный проект являлся промежуточной аттестацией на курсе Яндекс Лицея "Программирование на Go"</h3>
