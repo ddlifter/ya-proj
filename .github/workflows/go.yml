@@ -15,8 +15,5 @@ jobs:
       with:
         go-version: '1.21.6'
 
-    - name: cd to directory
-      run: cd internal/services/agent/calculate
-
     - name: Run tests
-      run: go test
+      run: cd internal/services/agent/calculate/ && go test
