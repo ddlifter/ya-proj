@@ -15,6 +15,7 @@ func TestEvaluateExpression(t *testing.T) {
 		{"(2+2)*3", 12},
 		{"(4*2)/2", 4},
 		{"(1+2)*(2-1)-(1+1)", 1},
+		{"5/0", -9999999999},
 	}
 
 	for _, test := range tests {

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"text/template"
 
 	database "1/internal/database"
 
@@ -13,8 +12,6 @@ import (
 
 func Home(w http.ResponseWriter, r *http.Request) {
 	database.Get()
-	tmpl, _ := template.ParseFiles("frontend/index.html")
-	tmpl.Execute(w, nil)
 }
 
 // Вывести все задачи

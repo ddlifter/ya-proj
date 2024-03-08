@@ -95,6 +95,11 @@ func EvaluateRPN(tokens []string) (float64, error) {
 			}
 			operand2, operand1 := stack[len(stack)-1], stack[len(stack)-2]
 			stack = stack[:len(stack)-2]
+
+			if operand2 == 0 && token == "/" {
+				return -9999999999, fmt.Errorf("Division by zero")
+			}
+
 			switch token {
 			case "+":
 				time.Sleep(time.Duration(Plus) * time.Second)
