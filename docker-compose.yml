@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: agent/Dockerfile
+    container_name: agent
+    networks:
+      - my_network
+  
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: gateway
+    networks:
+      - my_network
+
+
+
+
+networks:
+  my_network:
+    driver: bridge

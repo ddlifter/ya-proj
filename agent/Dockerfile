@@ -2,12 +2,12 @@ FROM golang:latest
 
 WORKDIR /app
 
-COPY go.mod .
-COPY go.sum .
+COPY agent/go.mod .
+COPY agent/go.sum .
 
 RUN go mod download
 
-COPY . .
+COPY agent .
 
 RUN go build -o agent app/main.go
 

@@ -1,13 +1,14 @@
 package main
 
 import (
-	server "1/internal/services/gateway"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
+
+	server "1/internal/handlers"
 )
 
 func main() {
